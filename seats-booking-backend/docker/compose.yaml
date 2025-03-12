@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: ${DB_USER:-devops}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-devops}
+      POSTGRES_DB: ${DB_NAME:-meeting_rooms}
+    ports:
+      - "5432:5432"
+    networks:
+      - booking_network
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-meeting_rooms}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-devops}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-devops}
+      SPRING_JPA_HIBERNATE_DDL-AUTO: validate
+    ports:
+      - "10101:10101"
+    depends_on:
+      - postgres
+    networks:
+      - booking_network
+
+networks:
+  booking_network:
+    driver: bridge
