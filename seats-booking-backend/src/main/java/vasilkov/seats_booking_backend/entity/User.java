@@ -2,7 +2,10 @@ package vasilkov.seats_booking_backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,6 +31,10 @@ public class User {
     @ToString.Exclude
     @JsonIgnore
     private List<Booking> booking;
+
+    public User(String fio) {
+        this.fio = fio;
+    }
 
     public void addBooking(Booking newBooking) {
         this.booking.add(newBooking);

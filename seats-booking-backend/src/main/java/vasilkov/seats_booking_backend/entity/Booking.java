@@ -41,7 +41,7 @@ public class Booking {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     @Column(name = "startTime")
     private LocalDateTime startTime;
-    
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     @Column(name = "endTime")
     private LocalDateTime endTime;

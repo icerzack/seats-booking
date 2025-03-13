@@ -53,19 +53,18 @@ public class BookingService {
 
         validateAndCheckForExistsBooking(room, bookingCreateDTO.getStartTime(), bookingCreateDTO.getEndTime());
 
-        User user = new User();
-        user.setFio(bookingCreateDTO.getFio());
-        User savedUser = userRepository.save(user);
+        User user = userRepository.findByFio(bookingCreateDTO.getFio())
+                .orElseGet(() -> userRepository.save(new User(bookingCreateDTO.getFio())));
 
         bookingRepository.save(Booking.builder()
                 .comment(bookingCreateDTO.getComment())
                 .endTime(bookingCreateDTO.getEndTime())
                 .startTime(bookingCreateDTO.getStartTime())
-                .user(savedUser)
+                .user(user)
                 .room(room).build());
 
         UserCode userCode = UserCode.builder()
-                .user(savedUser)
+                .user(user)
                 .code(UUID.randomUUID().toString())
                 .build();
 
