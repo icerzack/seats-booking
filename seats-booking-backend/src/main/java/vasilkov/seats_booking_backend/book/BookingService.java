@@ -63,12 +63,10 @@ public class BookingService {
                 .user(user)
                 .room(room).build());
 
-        UserCode userCode = UserCode.builder()
-                .user(user)
-                .code(UUID.randomUUID().toString())
-                .build();
-
-        userCodeRepository.save(userCode);
+        UserCode userCode = userCodeRepository.findByUser(user)
+                .orElseGet(() -> userCodeRepository.save(UserCode.builder().user(user)
+                        .code(UUID.randomUUID().toString())
+                        .build()));
 
         return UserCodeDTO.builder()
                 .code(userCode.getCode())
