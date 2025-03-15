@@ -2,10 +2,7 @@ package vasilkov.seats_booking_backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -18,6 +15,8 @@ import static vasilkov.seats_booking_backend.entity.utils.ColumnLength.CL_FIELD_
 @Entity
 @Table(name = "user_")
 @RequiredArgsConstructor
+@Builder
+@AllArgsConstructor
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

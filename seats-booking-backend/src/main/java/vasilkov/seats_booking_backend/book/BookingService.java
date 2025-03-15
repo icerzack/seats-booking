@@ -107,7 +107,7 @@ public class BookingService {
         bookingRepository.deleteById(id);
     }
 
-    public List<TimeSlotDTO> getAvailableTimeSlots(final UUID roomId, final LocalDateTime date) {
+    public List<TimeSlotDTO> getTimeSlots(final UUID roomId, final LocalDateTime date) {
         final Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Room not found"));
 

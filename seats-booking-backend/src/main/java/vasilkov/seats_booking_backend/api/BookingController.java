@@ -15,7 +15,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/bookings")
-class BookingController {
+public class BookingController {
 
     private final BookingService bookingService;
 
@@ -44,9 +44,9 @@ class BookingController {
     }
 
     @GetMapping("/room/{roomId}/availability")
-    public List<TimeSlotDTO> getAvailableSlots(@PathVariable UUID roomId, @RequestParam String date) {
+    public List<TimeSlotDTO> getSlots(@PathVariable UUID roomId, @RequestParam String date) {
         LocalDateTime parsedDate = LocalDateTime.parse(date + "T00:00:00");
-        return bookingService.getAvailableTimeSlots(roomId, parsedDate);
+        return bookingService.getTimeSlots(roomId, parsedDate);
     }
 }
 

@@ -2,10 +2,7 @@ package vasilkov.seats_booking_backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.util.List;
@@ -20,6 +17,8 @@ import static vasilkov.seats_booking_backend.entity.utils.ColumnLength.CL_FILED_
 @Setter
 @Entity
 @Table(name = "room")
+@Builder
+@AllArgsConstructor
 public class Room {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
