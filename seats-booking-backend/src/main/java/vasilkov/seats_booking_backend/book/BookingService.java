@@ -53,23 +53,20 @@ public class BookingService {
 
         validateAndCheckForExistsBooking(room, bookingCreateDTO.getStartTime(), bookingCreateDTO.getEndTime());
 
-        User user = new User();
-        user.setFio(bookingCreateDTO.getFio());
-        User savedUser = userRepository.save(user);
+        User user = userRepository.findByFio(bookingCreateDTO.getFio())
+                .orElseGet(() -> userRepository.save(new User(bookingCreateDTO.getFio())));
 
         bookingRepository.save(Booking.builder()
                 .comment(bookingCreateDTO.getComment())
                 .endTime(bookingCreateDTO.getEndTime())
                 .startTime(bookingCreateDTO.getStartTime())
-                .user(savedUser)
+                .user(user)
                 .room(room).build());
 
-        UserCode userCode = UserCode.builder()
-                .user(savedUser)
-                .code(UUID.randomUUID().toString())
-                .build();
-
-        userCodeRepository.save(userCode);
+        UserCode userCode = userCodeRepository.findByUser(user)
+                .orElseGet(() -> userCodeRepository.save(UserCode.builder().user(user)
+                        .code(UUID.randomUUID().toString())
+                        .build()));
 
         return UserCodeDTO.builder()
                 .code(userCode.getCode())
@@ -141,7 +138,11 @@ public class BookingService {
         if (endTime.isBefore(startTime) || endTime.isEqual(startTime)) {
             throw new RuntimeException("End time must be after start time");
         }
-        if (bookingRepository.existsByRoomAndStartTimeBetween(room, startTime, endTime)) {
+        boolean isOverlap = bookingRepository.findByRoomAndStartTimeBetween(room, startTime.minusSeconds(1), endTime)
+                .stream()
+                .anyMatch(booking -> isOverlapping(booking.getStartTime(), booking.getEndTime(), startTime, endTime));
+
+        if (isOverlap) {
             throw new RuntimeException("Room is already booked for the selected time");
         }
     }
@@ -151,14 +152,20 @@ public class BookingService {
             throw new RuntimeException("End time must be after start time");
         }
 
-        List<Booking> conflictingBookings = bookingRepository.findByRoomAndStartTimeBetween(room, startTime, endTime);
+        List<Booking> conflictingBookings = bookingRepository.findByRoomAndStartTimeBetween(room, startTime.minusSeconds(1), endTime);
 
         boolean isBookedByOtherUser = conflictingBookings.stream()
-                .anyMatch(booking -> !booking.getUser().getId().equals(userId));
+                .anyMatch(booking -> !booking.getUser().getId().equals(userId) &&
+                        isOverlapping(booking.getStartTime(), booking.getEndTime(), startTime, endTime));
 
         if (isBookedByOtherUser) {
             throw new RuntimeException("Room is already booked for the selected time by another user");
         }
+    }
+
+    private boolean isOverlapping(LocalDateTime existingStart, LocalDateTime existingEnd,
+                                  LocalDateTime newStart, LocalDateTime newEnd) {
+        return newStart.isBefore(existingEnd) && newEnd.isAfter(existingStart) && !newEnd.isEqual(existingStart);
     }
 
 }

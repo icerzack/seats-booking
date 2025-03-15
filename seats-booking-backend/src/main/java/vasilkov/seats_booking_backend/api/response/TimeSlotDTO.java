@@ -1,5 +1,6 @@
 package vasilkov.seats_booking_backend.api.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 
 import java.time.LocalTime;
@@ -9,8 +10,12 @@ import java.time.LocalTime;
 @AllArgsConstructor
 @Builder
 public class TimeSlotDTO {
+    @JsonFormat(pattern = "HH:mm")
     private LocalTime startTime;
+
+    @JsonFormat(pattern = "HH:mm")
     private LocalTime endTime;
+
     private boolean isBooked;
 
     public boolean equals(final Object o) {

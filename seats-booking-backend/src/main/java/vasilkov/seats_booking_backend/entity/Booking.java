@@ -1,5 +1,6 @@
 package vasilkov.seats_booking_backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
@@ -37,9 +38,11 @@ public class Booking {
     @JsonIgnore
     private User user;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     @Column(name = "startTime")
     private LocalDateTime startTime;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     @Column(name = "endTime")
     private LocalDateTime endTime;
 
