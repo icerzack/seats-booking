@@ -23,6 +23,7 @@ services:
       SPRING_JPA_HIBERNATE_DDL-AUTO: validate
     ports:
       - "10101:10101"
+    platform: linux/amd64
     depends_on:
       - postgres
     networks:
