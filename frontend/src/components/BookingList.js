@@ -19,7 +19,7 @@ const BookingList = ({ userCode }) => {
     return (
         <div>
             <h2>Your Bookings</h2>
-            {bookings.length > 0 ? (
+            {bookings?.length > 0 ? (
                 <div className="slots-list">
                     {bookings.map(booking => (
                         <div key={booking.id} className="slot-item">
