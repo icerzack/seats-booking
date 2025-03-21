@@ -5,7 +5,7 @@ import { getAllRooms } from '../api/rooms';
 const AvailableSlots = ({ roomId }) => {
     const [date, setDate] = useState('');
     const [slots, setSlots] = useState([]);
-    const [roomName, setRoomName] = useState('');
+    const [, setRoomName] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
