@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
 import vasilkov.seats_booking_backend.api.request.BookingCreateDTO;
+import vasilkov.seats_booking_backend.api.request.BookingDto;
 import vasilkov.seats_booking_backend.api.request.BookingUpdateDTO;
 import vasilkov.seats_booking_backend.api.response.TimeSlotDTO;
 import vasilkov.seats_booking_backend.api.response.UserCodeDTO;
@@ -92,7 +93,7 @@ class BookingServiceTest {
         when(bookingRepository.findByUser(user)).thenReturn(List.of(booking));
 
         // when: вызов метода поиска бронирований по коду
-        List<Booking> result = bookingService.getBookingsByCode(code);
+        List<BookingDto> result = bookingService.getBookingsByCode(code);
 
         // then: проверка, что возвращен список бронирований
         assertNotNull(result);
