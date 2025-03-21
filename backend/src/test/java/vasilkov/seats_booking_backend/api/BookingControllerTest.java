@@ -6,6 +6,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import vasilkov.seats_booking_backend.api.request.BookingCreateDTO;
+import vasilkov.seats_booking_backend.api.request.BookingDto;
 import vasilkov.seats_booking_backend.api.request.BookingUpdateDTO;
 import vasilkov.seats_booking_backend.api.response.TimeSlotDTO;
 import vasilkov.seats_booking_backend.api.response.UserCodeDTO;
@@ -56,13 +57,13 @@ class BookingControllerTest {
     void givenUserCode_whenGetByUser_thenReturnListOfBookings() {
         // given: подготовка данных для поиска бронирований по коду
         String code = "testСode";
-        Booking booking = new Booking();
-        List<Booking> bookings = Collections.singletonList(booking);
+        BookingDto booking = new BookingDto();
+        List<BookingDto> bookings = Collections.singletonList(booking);
 
         when(bookingService.getBookingsByCode(code)).thenReturn(bookings);
 
         // when: вызов метода поиска бронирований по коду
-        List<Booking> result = bookingController.getByUser(code);
+        List<BookingDto> result = bookingController.getByUser(code);
 
         // then: проверка, что возвращен список бронирований
         assertNotNull(result);

@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import vasilkov.seats_booking_backend.api.request.BookingCreateDTO;
+import vasilkov.seats_booking_backend.api.request.BookingDto;
 import vasilkov.seats_booking_backend.api.request.BookingUpdateDTO;
 import vasilkov.seats_booking_backend.api.response.TimeSlotDTO;
 import vasilkov.seats_booking_backend.api.response.UserCodeDTO;
@@ -21,6 +22,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class BookingService {
@@ -77,12 +79,21 @@ public class BookingService {
         return bookingRepository.findAll();
     }
 
-    public List<Booking> getBookingsByCode(String code) {
+    public List<BookingDto> getBookingsByCode(String code) {
         UserCode userCode = userCodeRepository.findByCode(code)
                 .orElseThrow(() -> new RuntimeException("Invalid code or NO reservations"));
-        return bookingRepository.findByUser(userCode.getUser());
+        return bookingRepository.findByUser(userCode.getUser()).stream()
+                .map(booking -> {
+                    BookingDto bookingDto = new BookingDto();
+                    bookingDto.setId(booking.getId());
+                    bookingDto.setRoomId(String.valueOf(booking.getRoom().getId()));
+                    bookingDto.setStartTime(booking.getStartTime());
+                    bookingDto.setEndTime(booking.getEndTime());
+                    bookingDto.setComment(booking.getComment());
+                    return bookingDto;
+                })
+                .collect(Collectors.toList());
     }
-
     public Booking updateBooking(final UUID id, final BookingUpdateDTO bookingUpdateDTO) {
         Room room = roomRepository.findById(bookingUpdateDTO.getRoomId())
                 .orElseThrow(() -> new RuntimeException("Room not found"));
