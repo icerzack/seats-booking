@@ -7,7 +7,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
 import vasilkov.seats_booking_backend.api.request.BookingCreateDTO;
-import vasilkov.seats_booking_backend.api.request.BookingDto;
+import vasilkov.seats_booking_backend.api.response.BookingDto;
 import vasilkov.seats_booking_backend.api.request.BookingUpdateDTO;
 import vasilkov.seats_booking_backend.api.response.TimeSlotDTO;
 import vasilkov.seats_booking_backend.api.response.UserCodeDTO;

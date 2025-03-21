@@ -4,7 +4,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import vasilkov.seats_booking_backend.api.request.BookingCreateDTO;
-import vasilkov.seats_booking_backend.api.request.BookingDto;
+import vasilkov.seats_booking_backend.api.response.BookingDto;
 import vasilkov.seats_booking_backend.api.request.BookingUpdateDTO;
 import vasilkov.seats_booking_backend.api.response.TimeSlotDTO;
 import vasilkov.seats_booking_backend.api.response.UserCodeDTO;

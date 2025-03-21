@@ -3,7 +3,7 @@ package vasilkov.seats_booking_backend.api;
 
 import org.springframework.web.bind.annotation.*;
 import vasilkov.seats_booking_backend.api.request.BookingCreateDTO;
-import vasilkov.seats_booking_backend.api.request.BookingDto;
+import vasilkov.seats_booking_backend.api.response.BookingDto;
 import vasilkov.seats_booking_backend.api.request.BookingUpdateDTO;
 import vasilkov.seats_booking_backend.api.response.TimeSlotDTO;
 import vasilkov.seats_booking_backend.api.response.UserCodeDTO;
