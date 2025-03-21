@@ -1,3 +1,2 @@
 # seats-booking
 
-.
