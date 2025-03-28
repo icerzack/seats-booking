@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:10101/api/v1';
+const API_URL = 'http://backend:10101/api/v1';
 
 export const getAllRooms = async (page = 0, size = 20, sort = []) => {
     const response = await axios.get(`${API_URL}/rooms`, {
