@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://backend:10101/api/v1';
+const API_URL = '/api/v1';
 
 export const createBooking = async (bookingData) => {
     const response = await axios.post(`${API_URL}/bookings`, bookingData);

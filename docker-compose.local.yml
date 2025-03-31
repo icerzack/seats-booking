@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:latest
@@ -25,6 +23,7 @@ services:
     restart: always
     depends_on:
       - postgres
+    platform: linux/amd64
     networks:
       - app_network
 

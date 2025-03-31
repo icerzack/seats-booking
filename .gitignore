@@ -78,3 +78,9 @@ build/
 .vscode/
 
 amplicode.xml
+
+### Terraform ###
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+terraform/vars.tfvars
