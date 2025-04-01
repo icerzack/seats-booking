@@ -4,7 +4,7 @@ import { getAllRooms } from '../rooms';
 jest.mock('axios');
 
 describe('Rooms API', () => {
-    const API_URL = 'http://77.244.220.121:10101/api/v1';
+    const API_URL = '/api/v1';
 
     afterEach(() => {
         jest.resetAllMocks();

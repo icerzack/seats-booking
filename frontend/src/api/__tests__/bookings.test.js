@@ -4,7 +4,7 @@ import { createBooking, getBookingsByUser, getAvailableSlots } from '../bookings
 jest.mock('axios');
 
 describe('Bookings API', () => {
-    const API_URL = 'http://77.244.220.121:10101/api/v1';
+    const API_URL = '/api/v1';
 
     afterEach(() => {
         jest.resetAllMocks();
