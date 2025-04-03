@@ -29,7 +29,7 @@ COPY --from=build-backend /app/backend/target/*.jar /app/app.jar
 
 COPY --from=build-frontend /app/frontend/build /usr/share/nginx/html
 
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+COPY build/nginx.conf /etc/nginx/conf.d/default.conf
 
 COPY <<EOF /docker-entrypoint.sh
 #!/bin/sh

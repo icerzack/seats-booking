@@ -3,32 +3,37 @@ version: '3.8'
 services:
   postgres:
     image: postgres:latest
-    container_name: postgres_db
     environment:
       POSTGRES_USER: ${DB_USER:-devops}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-devops}
       POSTGRES_DB: ${DB_NAME:-meeting_rooms}
-    ports:
-      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
     networks:
-      - booking_network
+      - app_network
+
   app:
+    image: ghcr.io/icerzack/seats-booking:latest
     build:
-      context: ..
-      dockerfile: docker/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-meeting_rooms}
       SPRING_DATASOURCE_USERNAME: ${DB_USER:-devops}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-devops}
       SPRING_JPA_HIBERNATE_DDL-AUTO: validate
     ports:
-      - "10101:10101"
-    platform: linux/amd64
+      - "80:80"
     depends_on:
       - postgres
+    restart: always
     networks:
-      - booking_network
+      - app_network
+
+volumes:
+  postgres_data:
 
 networks:
-  booking_network:
+  app_network:
     driver: bridge
