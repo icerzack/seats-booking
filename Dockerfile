@@ -1,18 +1,19 @@
 # 1. Backend
-FROM maven:3.8.6-openjdk-17-slim AS build-backend
+FROM maven:3.9.9-amazoncorretto-17-debian AS build-backend
 
 WORKDIR /app/backend
+
 COPY backend/pom.xml .
 
-RUN mvn dependency:go-offline -B
 COPY backend/src ./src
 
-RUN mvn package -DskipTests
+RUN mvn clean package -DskipTests
 
 # 2. Frontend
 FROM node:16-alpine AS build-frontend
 
 WORKDIR /app/frontend
+
 COPY frontend/package*.json ./
 RUN npm install
 
