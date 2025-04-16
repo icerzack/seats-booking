@@ -41,5 +41,26 @@ module "vm" {
   server_zone       = var.server_zone
   network_id        = module.network.network_id
   floatingip_address = module.network.floatingip_address
-  cloud_init_file   = var.cloud_init_file
+  cloud_init_content = local.cloud_init_content
+}
+
+# Локальный ресурс для вывода информационного сообщения
+resource "null_resource" "deployment_info" {
+  depends_on = [module.vm]
+  
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "========================================================="
+      echo "Kubernetes will be installed on VM ${module.vm.floatingip_address}"
+      echo "Installing and configuring Kubernetes may take 10-15 minutes."
+      echo ""
+      echo "After completion, the application will be available at:"
+      echo "Application URL: http://${module.vm.floatingip_address}:30080"
+      echo ""
+      echo "To check deployment status, SSH to the VM:"
+      echo "ssh ubuntu@${module.vm.floatingip_address}"
+      echo "Then run: sudo cat /root/app-info.txt"
+      echo "========================================================="
+    EOT
+  }
 }

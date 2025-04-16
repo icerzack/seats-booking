@@ -68,8 +68,7 @@ variable "floatingip_address" {
     type        = string
 }
 
-variable "cloud_init_file" {
-    description = "Path to the cloud-init.yml file. If empty, no cloud-init will be used."
-    type        = string
-    default     = ""
+variable "cloud_init_content" {
+  description = "Content for cloud-init configuration"
+  type        = string
 }

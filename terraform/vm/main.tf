@@ -20,22 +20,20 @@ data "openstack_images_image_v2" "image_1" {
   most_recent = true
 }
 
-# Use cloud-init only if a file path is provided
-locals {
-  use_cloud_init = var.cloud_init_file != "" ? true : false
-  user_data = local.use_cloud_init ? file(var.cloud_init_file) : null
-}
-
 resource "openstack_compute_instance_v2" "instance_1" {
   name              = var.server_name
   image_id          = data.openstack_images_image_v2.image_1.id
   flavor_id         = openstack_compute_flavor_v2.flavor_1.id
   availability_zone = var.server_zone
   admin_pass 	      = "12345678"
-  user_data         = local.user_data
+  user_data         = var.cloud_init_content
 
   network {
     uuid = var.network_id
+  }
+
+  timeouts {
+    create = "30m"
   }
 
   lifecycle {

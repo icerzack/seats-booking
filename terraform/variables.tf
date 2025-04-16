@@ -92,9 +92,3 @@ variable "server_zone" {
   type        = string
   default     = "ru-7a"
 }
-
-variable "cloud_init_file" {
-  description = "Path to the cloud-init.yml file. If empty, no cloud-init will be used."
-  type        = string
-  default     = "" # Empty by default to make it optional
-}
