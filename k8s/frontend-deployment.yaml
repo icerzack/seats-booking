@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: seats-booking-frontend:latest
-        imagePullPolicy: IfNotPresent
+        image: ghcr.io/REPOSITORY_OWNER/seats-booking/frontend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
         resources:
@@ -26,11 +26,14 @@ spec:
           limits:
             cpu: 200m
             memory: 256Mi
+        env:
+        - name: BACKEND_URL
+          value: "http://backend:8080"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend-service
+  name: frontend
   namespace: seats-booking
 spec:
   selector:

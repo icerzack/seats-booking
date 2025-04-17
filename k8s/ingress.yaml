@@ -9,17 +9,17 @@ spec:
   rules:
   - http:
       paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: backend
+            port:
+              number: 10101
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: frontend-service
+            name: frontend
             port:
-              number: 80
-      - path: /bookings
-        pathType: Prefix
-        backend:
-          service:
-            name: backend-service
-            port:
-              number: 8080 
+              number: 80 

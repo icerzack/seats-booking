@@ -15,10 +15,27 @@ spec:
     spec:
       containers:
       - name: backend
-        image: seats-booking-backend:latest
-        imagePullPolicy: IfNotPresent
+        image: ghcr.io/REPOSITORY_OWNER/seats-booking/backend:latest
+        imagePullPolicy: Always
         ports:
-        - containerPort: 8080
+        - containerPort: 10101
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:postgresql://postgres:5432/meeting_rooms
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: POSTGRES_USER
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: POSTGRES_PASSWORD
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: update
+        - name: SERVER_PORT
+          value: "10101"
         resources:
           requests:
             cpu: 100m
@@ -30,12 +47,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: backend-service
+  name: backend
   namespace: seats-booking
 spec:
   selector:
     app: backend
   ports:
-  - port: 8080
-    targetPort: 8080
+  - port: 10101
+    targetPort: 10101
   type: ClusterIP 
