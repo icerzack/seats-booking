@@ -17,6 +17,7 @@ import static vasilkov.seats_booking_backend.entity.utils.ColumnLength.CL_FIELD_
 @RequiredArgsConstructor
 @Builder
 @AllArgsConstructor
+@EqualsAndHashCode
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
