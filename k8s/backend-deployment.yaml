@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: seats-booking
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: ghcr.io/icerzack/seats-booking/backend:latest
+        imagePullPolicy: Always
+        command: ["/bin/sh", "-c"]
+        args: ["java -version && java -jar /app/app.jar"]
+        ports:
+        - containerPort: 10101
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:postgresql://postgres:5432/meeting_rooms
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: POSTGRES_USER
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: POSTGRES_PASSWORD
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: update
+        - name: SERVER_PORT
+          value: "10101"
+        - name: JAVA_HOME
+          value: "/opt/java/openjdk"
+        - name: LOGGING_LEVEL_WEB
+          value: "DEBUG"
+        - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB
+          value: "DEBUG"
+        - name: SERVER_TOMCAT_ACCESSLOG_ENABLED
+          value: "true"
+        - name: SERVER_TOMCAT_ACCESSLOG_PATTERN
+          value: "%h %l %u %t \"%r\" %s %b %D [%{POD_NAME}i]"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: seats-booking
+spec:
+  selector:
+    app: backend
+  ports:
+  - port: 10101
+    targetPort: 10101
+  type: ClusterIP 
