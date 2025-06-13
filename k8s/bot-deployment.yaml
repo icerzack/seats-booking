@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bot
+  namespace: seats-booking
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bot
+  template:
+    metadata:
+      labels:
+        app: bot
+    spec:
+      containers:
+      - name: bot
+        image: ghcr.io/icerzack/seats-booking/bot:latest
+        imagePullPolicy: Always
+        command: ["/bin/sh", "-c"]
+        args: ["java -version && java -jar /app/app.jar"]
+        ports:
+        - containerPort: 8080
+        env:
+        - name: TELEGRAM_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: telegram-secrets
+              key: TELEGRAM_BOT_TOKEN
+        - name: TELEGRAM_BOT_WEBHOOK_PATH
+          valueFrom:
+            configMapKeyRef:
+              name: ingress-config
+              key: BOT_URL
+        - name: JAVA_HOME
+          value: "/opt/java/openjdk"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bot
+  namespace: seats-booking
+spec:
+  selector:
+    app: bot
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP 

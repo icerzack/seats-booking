@@ -1,0 +1,79 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main, develop, 'lab/*' ]
+  pull_request:
+    branches: [ main, 'lab/*' ]
+
+permissions:
+  contents: read
+  packages: write
+  actions: read
+  security-events: write
+
+jobs:
+  # Stage 1: Build and Test (parallel execution of existing workflows)
+  backend-build-test:
+    uses: ./.github/workflows/backend.yml
+    secrets: inherit
+
+  frontend-build-test:
+    uses: ./.github/workflows/frontend.yml
+    secrets: inherit
+
+  bot-build:
+    uses: ./.github/workflows/bot.yml
+    secrets: inherit
+
+  # Stage 2: SonarQube Analysis (runs always, but jobs inside will check secrets)
+  sonarqube-analysis:
+    needs: [backend-build-test, frontend-build-test]
+    uses: ./.github/workflows/sonarqube.yml
+    secrets:
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # Stage 3: Deploy Docker Images (main and lab branches after SonarQube passes)
+  deploy-backend-image:
+    needs: [sonarqube-analysis]
+    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/lab/')) && (needs.sonarqube-analysis.result == 'success' || needs.sonarqube-analysis.result == 'skipped')
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/backend-publish.yml
+    with:
+      version: ${{ github.sha }}
+    secrets: inherit
+
+  deploy-frontend-image:
+    needs: [sonarqube-analysis]
+    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/lab/')) && (needs.sonarqube-analysis.result == 'success' || needs.sonarqube-analysis.result == 'skipped')
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/frontend-publish.yml
+    with:
+      version: ${{ github.sha }}
+    secrets: inherit
+
+  deploy-bot-image:
+    needs: [bot-build]
+    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/lab/')) && needs.bot-build.result == 'success'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/bot-publish.yml
+    with:
+      version: ${{ github.sha }}
+    secrets: inherit
+
+  # Stage 4: Deploy to Kubernetes (after Docker images are published)
+  deploy-to-kubernetes:
+    needs: [deploy-backend-image, deploy-frontend-image, deploy-bot-image]
+    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/lab/')) && needs.deploy-backend-image.result == 'success' && needs.deploy-frontend-image.result == 'success' && needs.deploy-bot-image.result == 'success'
+    uses: ./.github/workflows/k8s-deploy.yml
+    with:
+      environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'lab' }}
+    secrets:
+      KUBECONFIG: ${{ secrets.KUBECONFIG }}

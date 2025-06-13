@@ -1,0 +1,5 @@
+telegram:
+  bot-token: ${TELEGRAM_BOT_TOKEN}
+  bot-name: "@DEVOPS_LAB4_ITMO_BOT"
+  webhook-path: ${TELEGRAM_BOT_WEBHOOK_PATH}
+  api-url: "https://api.telegram.org/"

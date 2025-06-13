@@ -1,0 +1,106 @@
+name: Deploy to Kubernetes
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: false
+        default: 'production'
+        type: string
+    secrets:
+      KUBECONFIG:
+        required: true
+
+jobs:
+  deploy-to-k8s:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Verify cluster connection
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+          echo "✅ Cluster connection verified"
+
+      - name: Deploy Namespace
+        run: |
+          echo "Create namespace"
+          kubectl apply -f k8s/namespace.yaml
+          echo "✅ Namespace created"
+
+      - name: Deploy Telegram Configuration First
+        run: |
+          echo "🤖 Creating Telegram configuration before main deployment..."
+          kubectl apply -f k8s/telegram-config.yaml
+          echo "✅ Telegram ConfigMap and Secret created"
+
+      - name: Deploy to Kubernetes using Makefile
+        run: |
+          echo "🚀 Starting Kubernetes deployment using existing Makefile command..."
+          make k8s-deploy-full KUBECONFIG_PATH=~/.kube/config
+
+      - name: Deploy Bot
+        run: |
+          echo "🤖 Deploying Telegram bot..."
+          kubectl apply -f k8s/bot-deployment.yaml
+          echo "✅ Bot deployment completed"
+
+      - name: Update Ingress IP for Telegram Services
+        run: |
+          echo "🔄 Updating ingress IP for Telegram services..."
+          chmod +x k8s/update-ingress-ip.sh
+          ./k8s/update-ingress-ip.sh
+
+      - name: Get deployment status and URLs
+        run: |
+          echo "📊 Final deployment status:"
+          make k8s-status KUBECONFIG_PATH=~/.kube/config
+
+      - name: Deployment Summary
+        run: |
+          echo "# 🚀 Kubernetes Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Successfully Deployed Components:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Namespace**: seats-booking" >> $GITHUB_STEP_SUMMARY
+          echo "- **Telegram Config**: ConfigMap and Secret for bot communication" >> $GITHUB_STEP_SUMMARY
+          echo "- **PostgreSQL**: Database with persistent storage" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend**: Spring Boot application (latest image)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend**: React application (latest image)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Bot**: Telegram bot application (latest image)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Ingress**: Load balancer and routing" >> $GITHUB_STEP_SUMMARY
+          echo "- **HPA**: Auto-scaling (1-3 replicas)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          EXTERNAL_IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "pending")
+          if [ "$EXTERNAL_IP" != "pending" ] && [ "$EXTERNAL_IP" != "" ]; then
+            echo "## 🌐 Application URLs:" >> $GITHUB_STEP_SUMMARY
+            echo "- **Frontend**: http://$EXTERNAL_IP" >> $GITHUB_STEP_SUMMARY
+            echo "- **Backend API**: http://$EXTERNAL_IP/api/v1" >> $GITHUB_STEP_SUMMARY
+            echo "- **Telegram Bot**: http://$EXTERNAL_IP/bot" >> $GITHUB_STEP_SUMMARY
+            echo "- **Health Check**: http://$EXTERNAL_IP/api/v1/actuator/health" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ⏳ External IP Status:" >> $GITHUB_STEP_SUMMARY
+            echo "External IP is still being assigned. Check ingress controller status." >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Resource Status:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          kubectl get pods -n seats-booking >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY 

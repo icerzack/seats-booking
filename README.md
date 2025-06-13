@@ -1,75 +1,303 @@
-# Seats Booking - Laboratory Work Repository
+# Seats Booking Application
 
-This repository contains a series of laboratory works demonstrating the development and deployment of a cloud-native application using modern DevOps practices.
+```mermaid
+graph TD
+    A["🚀 Push to lab/4 branch"] --> B["🏗️ Backend Build & Test"]
+    A --> C["🖥️ Frontend Build & Test"]
+    
+    B --> D["🔍 SonarQube Analysis"]
+    C --> D
+    
+    D --> E["📊 Coverage Check<br/>(≥80% required)"]
+    E -->|✅ Pass| F["🐳 Docker Backend Publish"]
+    E -->|❌ Fail| G["⛔ Pipeline Stops"]
+    
+    F --> H["🐳 Docker Frontend Publish"]
+    H --> I["☸️ Kubernetes Deploy<br/>(make k8s-deploy-full)"]
+    
+    I --> J["📦 Deploy Components"]
+    J --> K["🏷️ Namespace: seats-booking"]
+    J --> L["🗄️ PostgreSQL + PVC"]
+    J --> M["🚀 Backend (latest image)"]
+    J --> N["🖥️ Frontend (latest image)"]
+    J --> O["🌐 NGINX Ingress"]
+    J --> P["📈 HPA (1-3 replicas)"]
+    
+    K --> Q["🎉 Application Ready"]
+    L --> Q
+    M --> Q
+    N --> Q
+    O --> Q
+    P --> Q
+    
+    Q --> R["🌐 Access via External IP"]
+```
 
-## Application Overview
+A cloud-native microservices application for seat booking management, built with Java Spring Boot, React, and PostgreSQL, deployed on Kubernetes with autoscaling capabilities.
 
-**Seats Booking** - A microservices application for managing seat reservations and bookings.
+## 🏗️ Architecture
 
-**Technology Stack:**
-- **Backend**: Spring Boot (Java)
-- **Frontend**: React
-- **Database**: PostgreSQL
+- **Backend**: Java 17 Spring Boot REST API with actuator endpoints
+- **Frontend**: React SPA served by Nginx  
+- **Database**: PostgreSQL 14 with persistent storage
+- **Infrastructure**: Kubernetes with NGINX Ingress Controller
+- **Autoscaling**: Horizontal Pod Autoscaler (HPA) with smart scaling behavior
+- **Monitoring**: Built-in metrics via Spring Boot Actuator
 
-## Laboratory Structure
+## 🚀 Quick Start
 
-### Lab 1 - Application Development
-**Branch:** `lab/1`
+### Prerequisites
 
-Contains the core application implementation:
-- Spring Boot REST API backend
-- React frontend application
-- PostgreSQL database integration
-- Basic application functionality for seat booking management
+- Kubernetes cluster access with kubeconfig file
+- kubectl installed locally
+- make utility
 
-### Lab 2 - Infrastructure as Code
-**Branch:** `lab/2`
+### Full Deployment
 
-Extends Lab 1 with cloud infrastructure deployment:
-- All components from Lab 1
-- Terraform configuration for Selectel cloud deployment
-- Infrastructure as Code (IaC) implementation
-- Automated cloud resource provisioning
+Deploy the entire application stack with a single command:
 
-### Lab 3 - Kubernetes Deployment
-**Branch:** `lab/3`
+```bash
+make k8s-deploy-full KUBECONFIG_PATH=/path/to/your/kubeconfig.yaml
+```
 
-Extends Lab 2 with Kubernetes orchestration:
-- All components from Lab 2
-- Kubernetes manifests and configurations
-- Application deployment to Selectel Kubernetes cluster
-- Container orchestration and scaling
+This command will:
+1. Create the `seats-booking` namespace
+2. Deploy PostgreSQL with persistent storage
+3. Deploy the backend API with health checks
+4. Deploy the frontend web application
+5. Install NGINX Ingress Controller (if not present)
+6. Configure Ingress routing
+7. Set up Horizontal Pod Autoscaler with delayed scaling
+8. Display access URLs when ready
 
-### Lab 4 - CI/CD and Code Quality
-**Branch:** `lab/4`
+### Check Application Status
 
-Extends Lab 3 with continuous integration and code quality:
-- All components from Lab 3
-- Continuous Deployment (CD) pipeline implementation
-- SonarQube integration for code quality analysis
-- Automated testing and deployment workflows
+```bash
+make k8s-status KUBECONFIG_PATH=/path/to/your/kubeconfig.yaml
+```
 
-## Getting Started
+### Clean Up
 
-To explore each laboratory work:
+Remove all application resources:
 
-1. Switch to the desired lab branch:
+```bash
+make k8s-clean KUBECONFIG_PATH=/path/to/your/kubeconfig.yaml
+```
+
+## 📋 Available Commands
+
+### Infrastructure Management
+
+```bash
+# Terraform operations
+make init          # Initialize Terraform
+make plan          # Show Terraform execution plan
+make apply         # Apply Terraform configuration
+make destroy       # Destroy infrastructure
+make output        # Show Terraform outputs
+```
+
+### Kubernetes Deployment
+
+```bash
+# Core deployment commands
+make k8s-deploy-full KUBECONFIG_PATH=/path/to/kubeconfig     # Full deployment
+make k8s-status KUBECONFIG_PATH=/path/to/kubeconfig          # Check status
+make k8s-clean KUBECONFIG_PATH=/path/to/kubeconfig           # Clean up
+make k8s-restart-backend KUBECONFIG_PATH=/path/to/kubeconfig # Restart backend
+```
+
+### Autoscaling and Load Testing
+
+```bash
+# HPA management
+make k8s-apply-smart-hpa KUBECONFIG_PATH=/path/to/kubeconfig # Apply improved HPA
+make k8s-watch-hpa KUBECONFIG_PATH=/path/to/kubeconfig       # Monitor HPA real-time
+make k8s-load-test KUBECONFIG_PATH=/path/to/kubeconfig       # Run load testing
+```
+
+### Monitoring and Debugging
+
+```bash
+# Logging and monitoring
+make k8s-logs-backend KUBECONFIG_PATH=/path/to/kubeconfig         # Follow backend logs
+make k8s-show-requests KUBECONFIG_PATH=/path/to/kubeconfig        # Show request distribution
+make k8s-demo-load-distribution KUBECONFIG_PATH=/path/to/kubeconfig # Demo load balancing
+```
+
+### Kubernetes Dashboard (Web UI)
+
+```bash
+# Dashboard setup
+make k8s-install-dashboard KUBECONFIG_PATH=/path/to/kubeconfig    # Install dashboard
+make k8s-dashboard-proxy KUBECONFIG_PATH=/path/to/kubeconfig      # Start proxy
+make k8s-dashboard-token KUBECONFIG_PATH=/path/to/kubeconfig      # Get login token
+```
+
+### Help
+
+```bash
+make help          # Show all available commands
+```
+
+## 🌐 Application Access
+
+After successful deployment, your application will be available at:
+
+- **Frontend**: `http://<external-ip>/`
+- **Backend API**: `http://<external-ip>/api/v1/`
+- **Health Check**: `http://<external-ip>/api/v1/actuator/health`
+- **Metrics**: `http://<external-ip>/api/v1/actuator/prometheus`
+
+The external IP is automatically displayed after deployment completion.
+
+## 📁 Project Structure
+
+```
+├── backend/                 # Java Spring Boot application
+├── frontend/               # React application
+├── k8s/                   # Kubernetes manifests
+│   ├── namespace.yaml
+│   ├── postgres-deployment.yaml
+│   ├── backend-deployment.yaml
+│   ├── frontend-deployment.yaml
+│   ├── ingress.yaml
+│   ├── backend-hpa.yaml
+│   ├── backend-hpa-delayed.yaml
+│   └── dashboard-admin.yaml
+├── terraform/             # Infrastructure as Code
+├── cloud-init.yaml       # VM initialization script
+├── Makefile              # Deployment automation
+└── README.md            # This file
+```
+
+## 🔧 Configuration Details
+
+### Database Configuration
+- **Database**: `meeting_rooms`
+- **User**: `devops`
+- **Storage**: Persistent volume with `fast.ru-1c` storage class
+- **Port**: 5432
+
+### Backend Configuration
+- **Port**: 10101
+- **Context Path**: `/api/v1`
+- **Java Version**: 17
+- **Spring Profiles**: Kubernetes-optimized
+
+### Autoscaling Configuration
+- **Minimum Replicas**: 1
+- **Maximum Replicas**: 5
+- **Target CPU**: 15%
+- **Scale Up**: Gradual (1 pod every 60 seconds)
+- **Scale Down**: Conservative (1 pod every 300 seconds)
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Pods stuck in Pending**
    ```bash
-   git checkout lab/1  # For Lab 1
-   git checkout lab/2  # For Lab 2
-   git checkout lab/3  # For Lab 3
-   git checkout lab/4  # For Lab 4
+   kubectl describe pods -n seats-booking
+   # Check for resource constraints or storage issues
    ```
 
-2. Follow the README instructions in each branch for specific setup and deployment steps.
+2. **External IP not assigned**
+   ```bash
+   kubectl get svc -n ingress-nginx
+   # Verify LoadBalancer service status
+   ```
 
-## Learning Objectives
+3. **Backend pods crashing**
+   ```bash
+   make k8s-logs-backend KUBECONFIG_PATH=/path/to/kubeconfig
+   # Check application logs for errors
+   ```
 
-Through these laboratory works, you will learn:
+4. **HPA not scaling**
+   ```bash
+   make k8s-watch-hpa KUBECONFIG_PATH=/path/to/kubeconfig
+   # Monitor HPA decisions and metrics
+   ```
 
-- **Lab 1**: Modern web application development with Spring Boot and React
-- **Lab 2**: Infrastructure as Code practices using Terraform
-- **Lab 3**: Container orchestration and Kubernetes deployment
-- **Lab 4**: CI/CD pipeline implementation and code quality management
+### Health Checks
 
-Each lab builds upon the previous one, creating a comprehensive DevOps learning experience from application development to production deployment.
+The application includes comprehensive health checks:
+- **Liveness Probe**: `/actuator/health/liveness`
+- **Readiness Probe**: `/actuator/health/readiness`
+- **Startup Probe**: `/actuator/health` (180-second timeout)
+
+## 📊 Monitoring and Observability
+
+### Built-in Metrics
+- Spring Boot Actuator metrics available at `/actuator/prometheus`
+- HPA metrics for CPU utilization
+- Pod resource usage monitoring
+
+### Load Testing
+The project includes built-in load testing capabilities using Apache Bench:
+```bash
+make k8s-load-test KUBECONFIG_PATH=/path/to/kubeconfig
+```
+
+### Real-time Monitoring
+Monitor your application in real-time:
+```bash
+# Watch HPA scaling decisions
+make k8s-watch-hpa KUBECONFIG_PATH=/path/to/kubeconfig
+
+# Follow application logs
+make k8s-logs-backend KUBECONFIG_PATH=/path/to/kubeconfig
+
+# Demo load distribution
+make k8s-demo-load-distribution KUBECONFIG_PATH=/path/to/kubeconfig
+```
+
+## 🔐 Security
+
+- RBAC configured for Kubernetes Dashboard
+- Network policies via Ingress Controller
+- Resource limits and quotas
+- Health check endpoints for service monitoring
+
+## 🚀 CI/CD Integration
+
+The project is designed to work with GitHub Actions for:
+- Automated Docker image building
+- Container registry publishing
+- Kubernetes deployment automation
+
+## 📝 Development
+
+For local development:
+
+1. **Database**:
+   ```bash
+   docker run -d --name postgres -p 5432:5432 \
+     -e POSTGRES_DB=meeting_rooms \
+     -e POSTGRES_USER=devops \
+     -e POSTGRES_PASSWORD=devops \
+     postgres:14-alpine
+   ```
+
+2. **Backend**:
+   ```bash
+   cd backend
+   mvn spring-boot:run -Dserver.port=10101
+   ```
+
+3. **Frontend**:
+   ```bash
+   cd frontend
+   npm install
+   npm start
+   ```
+
+## 📞 Support
+
+For help with specific commands, run:
+```bash
+make help
+```
+
+This will display all available commands with usage examples.

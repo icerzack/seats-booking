@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ingress-config
+  namespace: seats-booking
+data:
+  # This will be updated by the deployment script with actual bot URL
+  BOT_URL: "http://PLACEHOLDER_IP/bot"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: telegram-secrets
+  namespace: seats-booking
+type: Opaque
+stringData:
+  TELEGRAM_BOT_TOKEN: "token" 

@@ -1,0 +1,300 @@
+name: SonarQube Analysis
+
+on:
+  workflow_call:
+    secrets:
+      SONAR_HOST_URL:
+        required: true
+      SONAR_TOKEN:
+        required: true
+
+jobs:
+  sonarqube-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for better relevancy
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-m2-
+
+      - name: Download backend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/target/site/jacoco/
+
+      - name: Run Backend Tests for SonarQube
+        run: mvn -B test jacoco:report --file backend/pom.xml
+
+      - name: SonarQube Analysis for Backend
+        run: |
+          echo "🔍 Starting SonarQube analysis for Backend..."
+          mvn sonar:sonar \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.projectKey=seats-booking-backend \
+            -Dsonar.projectName="Seats Booking Backend" \
+            -Dsonar.sources=src/main \
+            -Dsonar.tests=src/test \
+            -Dsonar.java.binaries=target/classes \
+            -Dsonar.java.test.binaries=target/test-classes \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+            -Dsonar.coverage.exclusions=**/*Application.java,**/*Config.java,**/*Configuration.java \
+            -Dsonar.qualitygate.wait=true \
+            --file backend/pom.xml
+
+      - name: Check Backend Coverage via SonarQube API
+        run: |
+          echo "📊 Checking backend coverage via SonarQube API..."
+          
+          # Wait a bit for SonarQube to process the analysis
+          echo "⏳ Waiting for SonarQube to process analysis..."
+          sleep 30
+          
+          # Get coverage from SonarQube API (using search_history endpoint)
+          echo "🔍 Making API call to SonarQube..."
+          API_RESPONSE=$(curl -s -u "${{ secrets.SONAR_TOKEN }}:" \
+            "${{ secrets.SONAR_HOST_URL }}/api/measures/search_history?component=seats-booking-backend&metrics=coverage")
+          
+          echo "📄 API Response:"
+          echo "$API_RESPONSE"
+          
+          COVERAGE=$(echo "$API_RESPONSE" | python3 -c "
+          import json
+          import sys
+          
+          try:
+              data = json.load(sys.stdin)
+              print(f'📊 Raw data: {data}', file=sys.stderr)
+              measures = data.get('measures', [])
+              print(f'📈 Found {len(measures)} measures', file=sys.stderr)
+              for measure in measures:
+                  metric = measure.get('metric')
+                  print(f'🔍 Processing metric: {metric}', file=sys.stderr)
+                  if metric == 'coverage':
+                      history = measure.get('history', [])
+                      print(f'📅 Found {len(history)} history entries', file=sys.stderr)
+                      if history:
+                          # Get the latest (last) value from history
+                          latest_entry = history[-1]
+                          latest_value = latest_entry.get('value', '0.0')
+                          print(f'🎯 Latest entry: {latest_entry}', file=sys.stderr)
+                          print(f'💯 Latest value: {latest_value}', file=sys.stderr)
+                          coverage = float(latest_value)
+                          print(f'{coverage:.1f}')
+                          sys.exit(0)
+              print('0.0')
+          except Exception as e:
+              print(f'❌ Error: {e}', file=sys.stderr)
+              import traceback
+              traceback.print_exc(file=sys.stderr)
+              print('0.0')
+          ")
+          
+          echo "🎯 Backend coverage from SonarQube: ${COVERAGE}%"
+          
+          # Check if coverage is at least 80%
+          if (( $(echo "${COVERAGE} < 80.0" | bc -l) )); then
+            echo "❌ Backend coverage (${COVERAGE}%) is below required 80%"
+            echo "📋 Quality Gate FAILED - Please add more tests to reach the minimum coverage requirement"
+            echo "🔗 View details: ${{ secrets.SONAR_HOST_URL }}/dashboard?id=seats-booking-backend"
+            exit 1
+          else
+            echo "✅ Backend coverage (${COVERAGE}%) meets the 80% requirement"
+          fi
+
+  sonarqube-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Download frontend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: frontend/coverage
+
+      - name: Run Frontend Tests for SonarQube
+        working-directory: ./frontend
+        run: npm test -- --watchAll=false --ci --coverage
+
+      - name: Install SonarQube Scanner
+        run: npm install -g sonarqube-scanner
+
+      - name: SonarQube Analysis for Frontend
+        working-directory: ./frontend
+        run: |
+          echo "🔍 Starting SonarQube analysis for Frontend..."
+          sonar-scanner \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.projectKey=seats-booking-frontend \
+            -Dsonar.projectName="Seats Booking Frontend" \
+            -Dsonar.sources=src \
+            -Dsonar.tests=src \
+            -Dsonar.test.inclusions=**/*.test.js,**/*.test.jsx,**/*.spec.js,**/*.spec.jsx \
+            -Dsonar.coverage.exclusions=src/index.js,src/serviceWorker.js,**/*.test.js,**/*.spec.js \
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+            -Dsonar.qualitygate.wait=true
+
+      - name: Check Frontend Coverage via SonarQube API
+        run: |
+          echo "📊 Checking frontend coverage via SonarQube API..."
+          
+          # Wait a bit for SonarQube to process the analysis
+          echo "⏳ Waiting for SonarQube to process analysis..."
+          sleep 30
+          
+          # Get coverage from SonarQube API (using search_history endpoint)
+          echo "🔍 Making API call to SonarQube..."
+          API_RESPONSE=$(curl -s -u "${{ secrets.SONAR_TOKEN }}:" \
+            "${{ secrets.SONAR_HOST_URL }}/api/measures/search_history?component=seats-booking-frontend&metrics=coverage")
+          
+          echo "📄 API Response:"
+          echo "$API_RESPONSE"
+          
+          COVERAGE=$(echo "$API_RESPONSE" | python3 -c "
+          import json
+          import sys
+          
+          try:
+              data = json.load(sys.stdin)
+              print(f'📊 Raw data: {data}', file=sys.stderr)
+              measures = data.get('measures', [])
+              print(f'📈 Found {len(measures)} measures', file=sys.stderr)
+              for measure in measures:
+                  metric = measure.get('metric')
+                  print(f'🔍 Processing metric: {metric}', file=sys.stderr)
+                  if metric == 'coverage':
+                      history = measure.get('history', [])
+                      print(f'📅 Found {len(history)} history entries', file=sys.stderr)
+                      if history:
+                          # Get the latest (last) value from history
+                          latest_entry = history[-1]
+                          latest_value = latest_entry.get('value', '0.0')
+                          print(f'🎯 Latest entry: {latest_entry}', file=sys.stderr)
+                          print(f'💯 Latest value: {latest_value}', file=sys.stderr)
+                          coverage = float(latest_value)
+                          print(f'{coverage:.1f}')
+                          sys.exit(0)
+              print('0.0')
+          except Exception as e:
+              print(f'❌ Error: {e}', file=sys.stderr)
+              import traceback
+              traceback.print_exc(file=sys.stderr)
+              print('0.0')
+          ")
+          
+          echo "🎯 Frontend coverage from SonarQube: ${COVERAGE}%"
+          
+          # Check if coverage is at least 80%
+          if (( $(echo "${COVERAGE} < 80.0" | bc -l) )); then
+            echo "❌ Frontend coverage (${COVERAGE}%) is below required 80%"
+            echo "📋 Quality Gate FAILED - Please add more tests to reach the minimum coverage requirement"
+            echo "🔗 View details: ${{ secrets.SONAR_HOST_URL }}/dashboard?id=seats-booking-frontend"
+            exit 1
+          else
+            echo "✅ Frontend coverage (${COVERAGE}%) meets the 80% requirement"
+          fi
+
+
+  quality-gate-check:
+    runs-on: ubuntu-latest
+    needs: [sonarqube-backend, sonarqube-frontend]
+    steps:
+      - name: Final Quality Gate Status
+        run: |
+          echo "🎯 Checking overall Quality Gate status..."
+          
+          # Check backend Quality Gate
+          echo "🔍 Backend Quality Gate:"
+          BACKEND_STATUS=$(curl -s -u "${{ secrets.SONAR_TOKEN }}:" \
+            "${{ secrets.SONAR_HOST_URL }}/api/qualitygates/project_status?projectKey=seats-booking-backend" \
+            | python3 -c "
+          import json
+          import sys
+          
+          try:
+              data = json.load(sys.stdin)
+              status = data.get('projectStatus', {}).get('status', 'ERROR')
+              print(status)
+          except:
+              print('ERROR')
+          ")
+          
+          echo "   Status: ${BACKEND_STATUS}"
+          
+          # Check frontend Quality Gate
+          echo "🔍 Frontend Quality Gate:"
+          FRONTEND_STATUS=$(curl -s -u "${{ secrets.SONAR_TOKEN }}:" \
+            "${{ secrets.SONAR_HOST_URL }}/api/qualitygates/project_status?projectKey=seats-booking-frontend" \
+            | python3 -c "
+          import json
+          import sys
+          
+          try:
+              data = json.load(sys.stdin)
+              status = data.get('projectStatus', {}).get('status', 'ERROR')
+              print(status)
+          except:
+              print('ERROR')
+          ")
+          
+          echo "   Status: ${FRONTEND_STATUS}"
+          
+
+          
+          # Final decision
+          echo ""
+          echo "🎯 Final Quality Gate Decision:"
+          if [[ "${BACKEND_STATUS}" == "OK" && "${FRONTEND_STATUS}" == "OK" ]]; then
+            echo "✅ All Quality Gates PASSED - Pipeline can continue"
+            echo "🎉 Backend and frontend meet all quality requirements"
+          else
+            echo "❌ Quality Gates FAILED - Pipeline blocked"
+            echo "📋 Issues found:"
+            if [[ "${BACKEND_STATUS}" != "OK" ]]; then
+              echo "   - Backend: ${BACKEND_STATUS}"
+              echo "   - 🔗 View: ${{ secrets.SONAR_HOST_URL }}/dashboard?id=seats-booking-backend"
+            fi
+            if [[ "${FRONTEND_STATUS}" != "OK" ]]; then
+              echo "   - Frontend: ${FRONTEND_STATUS}"
+              echo "   - 🔗 View: ${{ secrets.SONAR_HOST_URL }}/dashboard?id=seats-booking-frontend"
+            fi
+
+            echo ""
+            echo "💡 Common issues that block Quality Gates:"
+            echo "   - Test coverage below 80%"
+            echo "   - Code smells or security vulnerabilities"
+            echo "   - Duplicated code blocks"
+            echo "   - Complexity issues"
+            exit 1
+          fi 
